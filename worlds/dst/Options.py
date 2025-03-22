@@ -37,8 +37,11 @@ class DaysToSurvive(NamedRange):
     }
 
 class RequiredBosses(OptionSet):
+    # TODO: If there's any intention of merging this to core, this description has to be shortened to look better on the web
     """
     Only applies for boss goal types. Which boss(es) are required to be defeated to beat the game?
+
+    Make sure correct regions, seasons, and day phases are enabled for your goal boss to be in logic.
 
     "Random" chooses a random boss. If bosses are chosen along with it, it'll choose a random boss within your selection.
 
@@ -62,6 +65,8 @@ class RequiredBosses(OptionSet):
     Scrappy Werepig - Cave (Full)
     Ancient Fuelweaver - Cave (Full), Night
     Celestial Champion - Ocean (Full)
+    
+    Example: ['Deerclops', 'Moose/Goose', 'Bearger']
     """
     display_name = "Boss Defeat Requirement"
     default = {"Ancient Guardian"}
@@ -314,7 +319,7 @@ class ShuffleStartingRecipes(Toggle):
     """
     Turn your basic starting recipes into Archipelago items?
 
-    This may leave you vulnerable to darkness on your first night! If you're not okay with this, you may want to add Torch to your starting items.
+    This may leave you vulnerable to darkness on your first night! If you're not okay with this, you may want to add {Torch: 1} to your start inventory.
 
     Sphere 1 will also be small, making generation more restrictive when generating alone, and is prone to fail if "Creature Locations" are off!
     """
