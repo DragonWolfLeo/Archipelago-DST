@@ -11,7 +11,7 @@ from CommonClient import CommonContext, get_base_parser
 from Utils import async_start, is_windows, is_macos
 from pathlib import Path
 import os
-from .Constants import LOCATION_BOSS_RANGE, LOCATION_RESEARCH_RANGE, VERSION, CLIENT_HOSTNAME, CLIENT_PORT
+from .Constants import LOCATION_BOSS_RANGE, LOCATION_RESEARCH_RANGE, VERSION
 from math import floor
 DST_FILE_START = "KLEI     1 "
 TIMEOUT_TIME:int = 60*3
