@@ -1942,13 +1942,13 @@ def set_rules(dst_world: World, itempool:DSTItemPool) -> None:
                     break
 
             if required and USE_PRIORITY_TAGS:
-                multiworld.priority_locations[player].value.add(location_name)
+                options.priority_locations.value.add(location_name)
             elif (
                 ("priority" in location_data.tags and USE_PRIORITY_TAGS)
                 or (options.boss_fill_items.value == options.boss_fill_items.option_priority and "boss" in location_data.tags)
             ):
                 # Prioritize generic priority tag
-                multiworld.priority_locations[player].value.add(location_name)
+                options.priority_locations.value.add(location_name)
 
             # Exclude from having progression items if it meets the conditions
             if not required and (
@@ -2077,7 +2077,7 @@ def set_rules(dst_world: World, itempool:DSTItemPool) -> None:
     for location_name in no_advancement:
         if (
             location_name in EXISTING_LOCATIONS
-            and not (location_name in multiworld.priority_locations[player].value)
+            and not (location_name in options.priority_locations.value)
             and not (location_name in excluded)
         ):
             add_item_rule(multiworld.get_location(location_name, player), NO_ADVANCEMENT_ITEM)
