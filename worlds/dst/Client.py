@@ -749,8 +749,7 @@ class DSTHandler():
 
         # Identify all data folders. There could potentially be multiple if there's multiple user profiles(?)
         profile_dirs:List[Path] = []
-        if os.path.isdir(base_dir / "client_save"):
-            profile_dirs.append(base_dir)
+        profile_dirs.append(base_dir) # Always check base dir because dedicated servers are usually set up here
         
         dirs = [str(filename) for filename in os.listdir(base_dir) if os.path.isdir(base_dir / filename)]
         for dirname in dirs:
