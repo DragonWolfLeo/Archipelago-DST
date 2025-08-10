@@ -1658,7 +1658,7 @@ def set_rules(dst_world: World, itempool:DSTItemPool) -> None:
             "Banana Shake":                     lambda state: state.has_any({cave_exploration.event, moon_quay_exploration.event}, player),
             "Ceviche":                          either_rule(sea_fishing.rule,
                                                 (lambda state: state.has_all({cave_exploration.event, "Freshwater Fishing Rod"}, player)) if REGION.CAVE in WHITELIST else ALWAYS_FALSE),
-            "Salsa Fresca":                     tomaroot_farming.rule,
+            "Salsa Fresca":                     combine_rules(tomaroot_farming.rule, onion_farming.rule),
             "Stuffed Pepper Poppers":           pepper_farming.rule,
             "California Roll":                  sea_fishing.rule,
             "Seafood Gumbo":                    lambda state: state.has_all({cave_exploration.event, "Freshwater Fishing Rod"}, player),
