@@ -418,6 +418,7 @@ class DSTHandler():
         "Death": set(),
         "Hint": set(),
     }
+    _avoid_run_reader_message_spam:bool = False
 
     def __init__(self, ctx:DSTContext):
         self.ctx = ctx
@@ -617,10 +618,9 @@ class DSTHandler():
     #         self.logger.info("Waiting for Don't Starve Together server.")
 
     
-    def get_game_data_folder(self) -> Path:
+    def get_game_data_folders(self) -> List[Path]:
         "Gets the path of the savedata folder for DST. May be temporary until game adds a solution to restore HTTP functionality."
-        home_path:Path
-        data_folder_path:Path
+        paths_to_check:List[Path] = [] # List of places where DST's save data could be saved
         if is_windows:
             # Copy-paste from SC2
             # The next five lines of utterly inscrutable code are brought to you by copy-paste from Stack Overflow.
@@ -632,21 +632,23 @@ class DSTHandler():
             buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
             ctypes.windll.shell32.SHGetFolderPathW(None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf)
             documentspath:str = buf.value
-            home_path = Path(documentspath)
-            data_folder_path = Path("Klei/DoNotStarveTogether")
+            # Add known path from documents folder
+            paths_to_check.append(Path(documentspath) / Path("Klei/DoNotStarveTogether"))
+            # Add known path from C:/
+            paths_to_check.append(Path("C:/DontStarveTogether/DoNotStarveTogether"))
         elif is_macos: # TODO: Verify if works on macos
-            home_path = Path.home()
-            data_folder_path = Path("Documents/Klei/DoNotStarveTogether")
-        else: # TODO: Verify if works on linux
-            home_path = Path.home()
-            data_folder_path = Path(".klei/DoNotStarveTogether")
+            paths_to_check.append(Path.home() / Path("Documents/Klei/DoNotStarveTogether"))
+        else: # Linux
+            data_folder_path:Path = Path(".klei/DoNotStarveTogether")
+            paths_to_check.append(Path.home() / data_folder_path)
+            paths_to_check.append(Path("~/.var/app/com.valvesoftware.Steam") / data_folder_path)
 
-        # Check if the file exists.
-        full_path = home_path / data_folder_path
-        if os.path.isdir(full_path):
-            return full_path
+        # Check if the dir exists
+        valid_paths:List[Path] = [path for path in paths_to_check if os.path.isdir(path)]
+        if len(valid_paths):
+            return valid_paths
         else:
-            raise IOError(f"Did not find directory at {str(data_folder_path)}")
+            raise IOError(f"Did not find DST save data directory at any known locations: {paths_to_check}")
 
     def read_incoming_data(self, base_dir:Path) -> Optional[Dict]:
         "Read AP data coming from DST. May be temporary until game adds a solution to restore HTTP functionality."
@@ -689,7 +691,7 @@ class DSTHandler():
                 return data.get("timestamp")
             return None
         except Exception as e:
-            self.logger.error(e)
+            print(f"DST get_incoming_data_timestamp error: {e}")
             return None
 
     def write_outgoing_data(self, base_dir:Path):
@@ -734,7 +736,7 @@ class DSTHandler():
                 ret.append(data)
         return ret
 
-    async def handle_io(self, base_dir:Path):
+    async def handle_io(self, known_dirs:List[Path]):
         "Counterpart of handle_dst_request. May be temporary until game adds a solution to restore HTTP functionality."
         # Wait until we have a seed name before proceeding
         while not self.ctx.seed_name or not self.ctx.slot or not self.ctx.connected_to_ap:
@@ -749,22 +751,23 @@ class DSTHandler():
 
         # Identify all data folders. There could potentially be multiple if there's multiple user profiles(?)
         profile_dirs:List[Path] = []
-        profile_dirs.append(base_dir) # Always check base dir because dedicated servers are usually set up here
-        
-        dirs = [str(filename) for filename in os.listdir(base_dir) if os.path.isdir(base_dir / filename)]
-        for dirname in dirs:
-            if os.path.isdir(base_dir / dirname / "client_save"):
-                profile_dirs.append(base_dir / dirname)
+        for known_dir in known_dirs:
+            profile_dirs.append(known_dir) # Always check base dir because dedicated servers are usually set up here
+            
+            dirs = [str(filename) for filename in os.listdir(known_dir) if os.path.isdir(known_dir / filename)]
+            for dirname in dirs:
+                if os.path.isdir(known_dir / dirname / "client_save"):
+                    profile_dirs.append(known_dir / dirname)
 
         print(f"Found {len(profile_dirs)} profile folder(s).")
-        if not len(profile_dirs):
-            raise IOError(f"Did not find any save data folders in {str(base_dir)}")
+        
+        # Because we also add the known_dir, there should absolutely be profile_dirs
+        assert len(profile_dirs) > 0
         
         # Locate the folder where the active session is. It'll have a new timestamp
+        base_dir:Optional[Path] = None
         while True:
             _newest_timestamp = int(self.connected_timestamp) - TIMEOUT_TIME
-            _new_base_dir = base_dir
-            breakout = False
             total_dirs_num = 0
             for profile_dir in profile_dirs:
                 dirs = [str(filename) for filename in os.listdir(profile_dir) if os.path.isdir(profile_dir / filename)]
@@ -776,13 +779,12 @@ class DSTHandler():
                     _timestamp = self.get_incoming_data_timestamp(Path(profile_dir / path))
                     if _timestamp and _timestamp > _newest_timestamp:
                         _newest_timestamp = _timestamp
-                        _new_base_dir = Path(profile_dir / path)
+                        base_dir = Path(profile_dir / path)
                         _session_location = str(path)
-                        breakout = True
             if not total_dirs_num:
                 raise IOError("No world save folders found within DoNotStarveTogether folder")
-            if breakout:
-                base_dir = _new_base_dir
+            if base_dir != None:
+                # Exit the loop now that we have an active session
                 break
             # Tell the player to run DST
             if not self.waiting_for_dst:
@@ -830,18 +832,21 @@ class DSTHandler():
         self.logger.info(f"Running Don't Starve Together Client Version {VERSION}")
         while True:
             try:
-                base_dir = self.get_game_data_folder()
+                known_dirs = self.get_game_data_folders()
                 while True:
                     if not self.connected:
                         self.connected = True
                         self.ctx.on_dst_reader_connected()
 
-                        await self.handle_io(base_dir)
+                        await self.handle_io(known_dirs)
                         self.connected = False # Reset queues
                         self.logger.info(f"Disconnected from Don't Starve Together (timed out)")
+                        self._avoid_run_reader_message_spam = False
                         await asyncio.sleep(3.0)
             except Exception as e:
-                self.logger.error(f"DST file reader error: {e}")
+                if not self._avoid_run_reader_message_spam:
+                    self.logger.error(f"DST file reader error: {e}")
+                    self._avoid_run_reader_message_spam = True
             finally:
                 self.connected = False
             print("Restarting connection loop in 5 seconds.")
