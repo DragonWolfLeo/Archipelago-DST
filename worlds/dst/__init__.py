@@ -1,4 +1,5 @@
-from typing import Dict, Set, List, Iterable
+import settings
+from typing import Dict, Set, List, Iterable, ClassVar
 
 from worlds.AutoWorld import World, WebWorld
 from worlds.LauncherComponents import Component, components, Type, launch_subprocess
@@ -32,6 +33,18 @@ class DSTWeb(WebWorld):
     options_presets = dontstarvetogether_option_presets
     theme = "ice"
 
+class DSTSettings(settings.Group):
+    class SaveDataDirectory(settings.UserFolderPath):
+        """
+        Locate the Don't Starve Together save data directory on your system.
+        This is NOT the game installation directory! To locate, press the Data button on the title screen.
+        This is used by the Don't Starve Together client, so it knows where to send communication files to.
+        You can also use this to play on the beta branch of Don't Starve Together.
+        """
+        description = "Don't Starve Together save data directory"
+
+    save_data_directory: SaveDataDirectory = SaveDataDirectory("")
+
 class DSTWorld(World):
     """
     Don't Starve Together is a game where you are thrown into a strange and unexplored world full of odd creatures,
@@ -43,8 +56,10 @@ class DSTWorld(World):
     item_name_to_id = item_name_to_id
     location_name_to_id = location_name_to_id
 
-    options_dataclass = DSTOptions  # assign the options dataclass to the world
-    options: DSTOptions  # typing for option results
+    options_dataclass = DSTOptions
+    options: DSTOptions
+    settings: ClassVar[DSTSettings]
+    settings_key = "dontstarvetogether_settings"
     topology_present = False
     web = DSTWeb()
 

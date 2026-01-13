@@ -1,7 +1,8 @@
-from typing import Optional, Any, Dict, List, Set
+from typing import Optional, Any, Dict, List, Set, cast
 import urllib.parse
 import logging
 import asyncio
+import Utils
 import json
 import time
 import socket
@@ -621,6 +622,10 @@ class DSTHandler():
     def get_game_data_folders(self) -> List[Path]:
         "Gets the path of the savedata folder for DST. May be temporary until game adds a solution to restore HTTP functionality."
         paths_to_check:List[Path] = [] # List of places where DST's save data could be saved
+        settings = Utils.get_settings()
+        save_data_directory_name = cast(str, settings["dontstarvetogether_settings"]["save_data_directory"])
+        if len(save_data_directory_name):
+            paths_to_check.append(Path(save_data_directory_name))
         if is_windows:
             # Copy-paste from SC2
             # The next five lines of utterly inscrutable code are brought to you by copy-paste from Stack Overflow.
@@ -648,7 +653,9 @@ class DSTHandler():
         if len(valid_paths):
             return valid_paths
         else:
-            raise IOError(f"Did not find DST save data directory at any known locations: {paths_to_check}")
+            raise IOError(f"Did not find DST save data directory at any known locations: {paths_to_check}\n"\
+            "Locate the correct path by pressing the Data button on Don't Starve Together's title screen, "\
+            "and then add it to host.yaml")
 
     def read_incoming_data(self, base_dir:Path) -> Optional[Dict]:
         "Read AP data coming from DST. May be temporary until game adds a solution to restore HTTP functionality."
