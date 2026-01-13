@@ -692,7 +692,7 @@ def set_rules(dst_world: World, itempool:DSTItemPool) -> None:
                 and (
                     state.has("Ham Bat", player)
                     or state.has_all({"Dark Sword", nightmare_fuel.event}, player)
-                    or state.has_all({"Glass Cutter", "Boards"}, player)
+                    or state.has("Glass Cutter", player)
                 )
                 and (ADVANCED_PLAYER_BIAS or state.has(base_making.event, player))
             )
@@ -1390,10 +1390,7 @@ def set_rules(dst_world: World, itempool:DSTItemPool) -> None:
             combine_rules(
                 lambda state: (
                     state.has(fire_staff.event, player)
-                    and (
-                        state.has("Dark Sword", player) # Nightmare fuel already required by fire staff
-                        or state.has_all({"Glass Cutter", "Boards"}, player)
-                    )
+                    and state.has_any({"Glass Cutter", "Dark Sword"}, player) # Nightmare fuel already required by fire staff
                 ),
                 # Chopping sporecaps
                 (lambda state: state.has_any({"Moon Glass Axe", pick_axe.event, weather_pain.event}, player))
