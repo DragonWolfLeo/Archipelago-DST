@@ -118,7 +118,7 @@ class CraftingMode(Choice):
 
 class CaveRegions(Choice):
     """
-    How far into the cave will your items and locations be shuffled?
+    How far into the cave will your items and checks be shuffled?
 
     None: No cave. Choose this if you're making a no-cave world!
 
@@ -137,7 +137,7 @@ class CaveRegions(Choice):
 
 class OceanRegions(Choice):
     """
-    How far into the ocean will your items and locations be shuffled?
+    How far into the ocean will your items and checks be shuffled?
 
     None: No ocean checks.
 
@@ -191,9 +191,9 @@ class DayPhases(OptionSet):
 
 class CreatureLocations(Choice):
     """
-    Are non-boss creatures item locations, by killing or non-violent interactions?
+    Are non-boss creatures checks, by killing or non-violent interactions?
 
-    None: Creatures are not checks. (Disabling will remove a lot of locations. Excess items will be moved into your start inventory.)
+    None: Creatures are not checks. (Disabling will remove a lot of checks. Excess items will be moved into your start inventory.)
 
     All: All creatures are checks.
 
@@ -207,7 +207,7 @@ class CreatureLocations(Choice):
 
 class BossLocations(Choice):
     """
-    Are boss defeats item locations, other than ones listed in your goal condition?
+    Are boss defeats checks, other than ones listed in your goal condition?
 
     None: No boss checks other than ones on your goal path.
 
@@ -223,17 +223,19 @@ class BossLocations(Choice):
 
 class CookingLocations(Choice):
     """
-    Find items when cooking different foods in the crock pot? There's a good chance you'll need the wiki to get all of these: https://dontstarve.wiki.gg/wiki/Dishes
+    Have checks for cooking different foods in the crock pot? Your checks and example recipes are in the in-game tracker.
+    The wiki is also a good resource: https://dontstarve.wiki.gg/wiki/Dishes
 
-    None: No items from cooking. (This will remove a lot of locations. Excess items will be moved into your start inventory.)
+    None: No checks from cooking. (This will remove a lot of checks. Excess items will be moved into your start inventory.)
 
-    Regular: Get items for cooking in the crock pot, excluding Warly's exclusives.
+    Regular: Get checks for cooking in the crock pot, excluding Warly's exclusives. (Up to 70 checks)
 
-    Include Warly Exclusives: All crock pot recipes are item locations. Logic will expect you to have the ability to use the Portable Crock Pot.
+    Warly Enabled: All crock pot recipes are checks, including Warly's exclusives.
+    Logic will expect you to have the ability to use the Portable Crock Pot. (Up to 81 checks)
 
-    Veggie Only: All recipes except meat and Warly exclusives.
+    Veggie Only: All recipes except meat and Warly exclusives. (Up to 32 checks)
 
-    Meat Only: All recipes except veggie and Warly exclusives.
+    Meat Only: All recipes except veggie and Warly exclusives. (Up to 48 checks)
     """
     display_name = "Cooking Locations"
     default = 1
@@ -245,7 +247,7 @@ class CookingLocations(Choice):
 
 class FarmingLocations(Toggle):
     """
-    Find items when you harvest giant crops?
+    Have checks for harvesting giant crops?
     """
     display_name = "Farming Locations"
 
@@ -259,9 +261,9 @@ class ChessPieceSketchItems(DefaultOnToggle):
 
 class ExtraDamageAgainstBosses(NamedRange):
     """
-    This adds "Extra Damage Against Bosses" buffs as Archipelago items. Recommended if playing solo.
+    This adds "Extra Damage Against Bosses" buffs as Archipelago items. High is recommended if planning to take on raid bosses solo.
 
-    Each stack of this buff gives the player a permanent +10% damage against easier bosses and +25% damage against tougher ones.
+    Each stack of this buff gives all damage sources a permanent +10% damage against easier bosses and +25% damage against tougher ones.
 
     This is exponential. With 10 stacks, this turns into x2.6 and x9.3 damage multipiers respectively. Multipliers can be configured in the mod configuration in the game's menu.
 
@@ -284,7 +286,7 @@ class DamageBonuses(NamedRange):
     """
     This adds "Damage Bonus" buffs as Archipelago items.
 
-    Each stack of this buff gives the player a permanent +10% damage against all mobs.
+    Each stack of this buff gives the player a permanent +10% damage against all mobs. It only affects a player's direct damage.
 
     This is exponential. With 10 stacks, this turns into a x2.6 multipier. Multiplier can be configured in the mod configuration in the game's menu.
 
@@ -305,7 +307,7 @@ class DamageBonuses(NamedRange):
 
 class BossFillItems(Choice):
     """
-    Choose what type of items a boss location can grant. Requires Boss Locations to be enabled.
+    Choose what type of items a boss check can grant. Requires Boss Locations to be enabled.
     """
     display_name = "Boss Fill Items"
     default = 0
@@ -461,7 +463,7 @@ class SeasonTrapItems(NamedRange):
     """
     Chance percentage junk items can be season-changing traps. These can only be seasons that are enabled. If combined with Traps Items, the percentage is split.
 
-    Can present a challenge when playing with normal season flow, otherwise can act as an annoyance or out-of-logic opportunity for unlockable season flow.
+    Season traps trigger a cooldown for player-controlled season changes. The length is configurable in the mod options (default 1 day).
     """
     display_name = "Season Trap Item Chance (Percentage)"
     default = 0

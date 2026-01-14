@@ -76,7 +76,7 @@ Some grindier checks have been set to not be allowed progression items.
 
 ## Can this work with a world without caves?
 
-As of Version 1.2, worlds without caves are supported. Make sure in your yaml that cave_regions is set to none, and that your goal is not set to a cave boss.
+Yes. Make sure in your yaml that cave_regions is set to none, and that your goal is not set to a cave boss.
 
 ## What happens if I choose Survival or Wilderness as my server playstyle or otherwise regenerate my world?
 
