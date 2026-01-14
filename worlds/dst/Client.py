@@ -222,10 +222,22 @@ class DSTContext(CommonContext):
                     self.dst_handler.enqueue({"datatype": "Locations", "checked_locations": locations})
 
             elif cmd == "PrintJSON":
-                if (args.get("slot") != self.slot) or args.get("type") == "Goal":
-                    text = self.rawjsontotextparser(args["data"])
-                    self.dst_handler.enqueue({"datatype": "Chat", "msg": text})
-
+                # Send relevant itemsends and goals
+                print_json_type = args.get("type")
+                if print_json_type == "ItemSend" and (
+                    self.slot_concerns_self(args["receiving"])
+                    or self.slot_concerns_self(args["item"].player)
+                ):
+                    self.dst_handler.enqueue({
+                        "datatype": "Chat",
+                        "msg": self.rawjsontotextparser(args["data"])
+                    })
+                elif print_json_type == "Goal":
+                    self.dst_handler.enqueue({
+                        "datatype": "Chat",
+                        "msg": self.rawjsontotextparser(args["data"])
+                    })
+                    
             elif cmd == "LocationInfo":
                 locs = args.get("locations")
                 for loc in locs:
@@ -735,9 +747,9 @@ class DSTHandler():
         ret:List[Dict[str, Any]] = []
         for data in queue:
             datatype:str = data.get("datatype")
-            if datatype == "Chat": # Remove Chat
-                continue
-            elif datatype == "HintInfo":
+            # if datatype == "Chat": # Remove Chat
+            #     continue
+            if datatype == "HintInfo":
                 # Remove duplicates
                 hinted_locs_for_player = hint_info_cache.get(data["finding_player"], set())
                 hint_info_cache[data["finding_player"]] = hinted_locs_for_player
