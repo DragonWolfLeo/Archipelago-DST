@@ -173,7 +173,7 @@ class DSTContext(CommonContext):
                 async def goal_hint():
                     await asyncio.sleep(0.5)
                     # Announce generator version
-                    self.logger.info(f"World generated on DST version: {self.slotdata.get('generator_version', 'Unknown')}")
+                    self.logger.info(f"World generated on DST APWorld version: {self.slotdata.get('generator_version', 'Unknown')}")
                     # Announce goal type
                     _goal = self.slotdata.get("goal")
                     self.logger.info(f"Goal type: {_goal}")
@@ -407,7 +407,6 @@ class DSTContext(CommonContext):
 class DSTHandler():
     logger = logging.getLogger("DSTInterface")
     ctx = None
-    lastping = time.time()
     _sendqueue:List[Any] = []
     _sendqueue_lowpriority:List[Any] = []
     filedata_location_scouts:Set[int] = set()
@@ -420,6 +419,7 @@ class DSTHandler():
         "Hint": set(),
     }
     _avoid_run_reader_message_spam:bool = False
+    _handle_io_world_mismatch_session_id:Optional[Any] = None
 
     def __init__(self, ctx:DSTContext):
         self.ctx = ctx
@@ -723,6 +723,12 @@ class DSTHandler():
         with open(file, "w") as f:
             f.write(DST_FILE_START + json.dumps(senddata))
 
+    def clean_up_outgoing_data_for_new_session(self):
+        "Whenever a player's DST world regenerates or reloads really quick, clean up events that don't need to be sent again."
+        _events_to_clear = {"Chat", "Death"}
+        self._sendqueue = [data for data in self._sendqueue if not (isinstance(data, Dict) and data.get("datatype") in _events_to_clear)]
+        self._sendqueue_lowpriority = [data for data in self._sendqueue_lowpriority if not (isinstance(data, Dict) and data.get("datatype") in _events_to_clear)]
+
     def optimize_sendqueue_for_filewrite(self, queue:List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         "Remove duplicates and Chat from sendqueue"
         hint_info_cache:Dict[int, Set[int]] = {}
@@ -803,6 +809,7 @@ class DSTHandler():
         self.logger.info(f"Located active session in {_session_location} folder.")
 
         # Continue the loop while connected to AP
+        self._handle_io_world_mismatch_session_id = None
         while self.ctx.connected_to_ap:
             try:
                 self.write_outgoing_data(base_dir)
@@ -818,13 +825,18 @@ class DSTHandler():
                             self.session_id = dst_session_id
                             self.outgoing_data_dirty = True
                             self.logger.info(f"Connected to Don't Starve Together")
+                            self._handle_io_world_mismatch_session_id = None
                         else:
-                            self.logger.error(f"Error! World doesn't match! Got player {incoming_data.get('slotname', 'Unknown')} with seed {incoming_data.get('seed')}")
-                            await asyncio.sleep(5.0) # It will spam but we'll slow it down a bit
+                            if self._handle_io_world_mismatch_session_id != dst_session_id:
+                                self.logger.error(f"Error! World doesn't match! Got player {incoming_data.get('slotname', 'Unknown')} with seed {incoming_data.get('seed')} "\
+                                "This world was previously played in a different multiworld or player slot. Use the correct world, or create a new one!")
+                                self._handle_io_world_mismatch_session_id = dst_session_id
+                            await asyncio.sleep(3.0)
                     if self.session_id:
                         if self.session_id != dst_session_id:
                             # Stale session; update session id
                             self.session_id = dst_session_id
+                            self.clean_up_outgoing_data_for_new_session()
                             self.outgoing_data_dirty = True
                             print("Updating session")
                         await self.handle_incoming_filedata(incoming_data)
