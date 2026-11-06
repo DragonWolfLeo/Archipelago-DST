@@ -80,7 +80,7 @@ If Don't Starve Together fails to connect after loading your world, follow these
 dontstarvetogether_settings:
   save_data_directory: "PATH HERE"
 ```
-- Put the correct save data path in the `save_data_directory` field. Save the file, and re-open Archipelago.    
+- Put the correct save data path in the `save_data_directory` field. Make sure to use `/` instead of `\`. Save the file, and re-open Archipelago.    
 
 ## Playing the game
 - You can see your checks in the built-in tracker. Press the Archipelago icon and press Open Tracker.
